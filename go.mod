@@ -1,6 +1,6 @@
 module github.com/bairrya/sj-rss
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/gocolly/colly v1.2.0
