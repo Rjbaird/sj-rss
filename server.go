@@ -89,7 +89,7 @@ func main() {
 
 	// start cron job goroutine
 	s.StartAsync()
-
+	go updateFeeds()
 	// start server goroutine
 	log.Fatal(server.Listen(fmt.Sprintf(":%s", config.PORT)))
 }
@@ -266,5 +266,4 @@ func createXML(path string, name string, atom string) {
 		log.Println("Error writing to xml feed:", err)
 		return
 	}
-	return
 }
