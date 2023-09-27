@@ -94,7 +94,8 @@ func UpdateFeeds() {
 }
 
 func UpdateSeriesFeed(series string) {
-	baseURL := "https://www.viz.com/shonenjump/chapters/" + series
+	const baseURL = "https://www.viz.com"
+	seriesURL := baseURL + "/shonenjump/chapters/" + series
 
 	c := colly.NewCollector()
 
@@ -103,7 +104,7 @@ func UpdateSeriesFeed(series string) {
 
 	feed := &feeds.Feed{
 		Title:       "Weekly Shonen Jump",
-		Link:        &feeds.Link{Href: baseURL},
+		Link:        &feeds.Link{Href: seriesURL},
 		Description: "The world's most popular manga!",
 		Author:      &feeds.Author{Name: "Shonen Jump | VIZ"},
 		Created:     now,
@@ -157,7 +158,7 @@ func UpdateSeriesFeed(series string) {
 		})
 	})
 
-	c.Visit(baseURL)
+	c.Visit(seriesURL)
 	// TODO: store in redis for api + tracking
 
 	// update rss feed
