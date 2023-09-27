@@ -36,7 +36,7 @@ func main() {
 
 	// set up cron jobs
 	s := gocron.NewScheduler(time.UTC)
-	s.Every(6).Hours().At("10:00").WaitForSchedule().Do(updateFeeds)
+	s.Every(1).Day().At("10:00").At("12:00").At("14:00").Do(updateFeeds)
 
 	// set up server
 	engine := html.New("./views", ".html")
@@ -89,7 +89,7 @@ func main() {
 
 	// start cron job goroutine
 	s.StartAsync()
-	
+
 	// start server goroutine
 	log.Fatal(server.Listen(fmt.Sprintf(":%s", config.PORT)))
 }
@@ -110,6 +110,8 @@ func updateFeeds() {
 		Description: "The world's most popular manga!",
 		Author:      &feeds.Author{Name: "Shonen Jump | VIZ"},
 		Created:     now,
+		// TODO: add main feed image
+		// Image: &feeds.Image{},
 	}
 
 	results := []*feeds.Item{}
@@ -183,11 +185,13 @@ func updateSeriesFeed(series string) {
 	results := []*feeds.Item{}
 
 	feed := &feeds.Feed{
-		Title: "Weekly Shonen Jump",
-		Link:  &feeds.Link{Href: baseURL},
-		// Description: "The world's most popular manga!",
-		Author:  &feeds.Author{Name: "Shonen Jump | VIZ"},
-		Created: now,
+		Title:       "Weekly Shonen Jump",
+		Link:        &feeds.Link{Href: baseURL},
+		Description: "The world's most popular manga!",
+		Author:      &feeds.Author{Name: "Shonen Jump | VIZ"},
+		Created:     now,
+		// TODO: add series image
+		// Image: &feeds.Image{},
 	}
 
 	c.OnRequest(func(r *colly.Request) {
