@@ -20,7 +20,10 @@ import (
 )
 
 type Series struct {
-	Name string
+	Name       string
+	Handle     string
+	URL        string
+	LastUpdate string
 }
 
 func main() {
@@ -33,7 +36,7 @@ func main() {
 
 	// set up cron jobs
 	s := gocron.NewScheduler(time.UTC)
-	s.Every(1).Day().At("10:00").At("12:00").At("14:00").Do(jobs.UpdateFeeds)
+	s.Every(1).Day().At("10:00;12:00;14:00").Do(jobs.UpdateFeeds)
 
 	// set up server
 	engine := html.New("./views", ".html")
