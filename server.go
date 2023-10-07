@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bairrya/sj-rss/config"
+	"github.com/bairrya/sj-rss/db"
 	"github.com/bairrya/sj-rss/jobs"
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
@@ -19,30 +20,21 @@ import (
 	"github.com/gofiber/template/html/v2"
 )
 
-type Series struct {
-	Name       string
-	Handle     string
-	URL        string
-	LastUpdate string
-}
-
 func main() {
+
 	// load config
 	config, err := config.ENV()
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// set up cron jobs
 	s := gocron.NewScheduler(time.UTC)
-	s.Every(1).Day().At("10:00;12:00;14:00").Do(jobs.UpdateFeeds)
+	s.Every(1).Day().At("10:00;12:00;14:00").WaitForSchedule().Do(jobs.UpdateFeeds)
 
 	// set up server
 	engine := html.New("./views", ".html")
 	server := fiber.New(fiber.Config{Views: engine, ViewsLayout: "layouts/main"})
-
-	// set up no-sql database (redis w/ hashmaps + persistence) for api
 
 	// set up middleware
 	server.Use(logger.New())
@@ -56,7 +48,15 @@ func main() {
 
 	// set up routes
 	server.Get("/", func(c *fiber.Ctx) error {
-		return c.Render("index", fiber.Map{})
+		data, err := db.GetAllSeries()
+		if err != nil {
+			log.Println("Error getting series:", err)
+		}
+
+		return c.Render("index", fiber.Map{
+			"Title":  "Shonen Jump RSS Feeds",
+			"Series": data,
+		})
 	})
 
 	rss := server.Group("/rss")

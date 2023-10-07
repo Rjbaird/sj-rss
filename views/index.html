@@ -1,0 +1,8 @@
+<h1 style="color: black">{{.Title}}</h1>
+<ul>
+    {{range .Series }}
+    <li>
+        <a href="/rss/{{.Handle}}.xml">{{.Name}} feed</a>
+    </li>
+    {{end}}
+</ul>

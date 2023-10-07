@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,8 +17,8 @@ func ENV() (*Config, error) {
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
-		fmt.Println("no PORT environment variable provided")
-		fmt.Println("Setting PORT to 3000")
+		log.Println("no PORT environment variable provided")
+		log.Println("Setting PORT to 3000")
 		PORT = "3000"
 	}
 
