@@ -29,7 +29,11 @@ func main() {
 	}
 
 	// set up cron jobs
-	s := gocron.NewScheduler(time.UTC)
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		log.Fatal(err)
+	}
+	s := gocron.NewScheduler(loc)
 	s.Every(1).Day().At("10:00;12:00;14:00").WaitForSchedule().Do(jobs.UpdateFeeds)
 
 	// set up server

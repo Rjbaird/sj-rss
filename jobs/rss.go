@@ -66,7 +66,6 @@ func UpdateFeeds() {
 	}
 
 	log.Println("done")
-
 }
 
 func createXML(path string, name string, atom string) error {
