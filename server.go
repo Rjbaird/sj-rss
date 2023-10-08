@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/bairrya/sj-rss/config"
 	"github.com/bairrya/sj-rss/db"
@@ -32,7 +33,7 @@ func main() {
 	s := gocron.NewScheduler(time.UTC)
 	loc, err := time.LoadLocation("America/Chicago")
 	if err != nil {
-		log.Fatal("Error loading location",err)
+		log.Fatal(err)
 	}
 
 	s.ChangeLocation(loc)
