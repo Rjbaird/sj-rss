@@ -32,8 +32,9 @@ func main() {
 	s := gocron.NewScheduler(time.UTC)
 	loc, err := time.LoadLocation("America/Chicago")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error loading location",err)
 	}
+
 	s.ChangeLocation(loc)
 	s.Every(1).Day().At("10:00;12:00;14:00").WaitForSchedule().Do(jobs.UpdateFeeds)
 
