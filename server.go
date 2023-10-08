@@ -48,6 +48,8 @@ func main() {
 
 	// set up routes
 	server.Get("/", func(c *fiber.Ctx) error {
+		// TODO: use Templ to generate index.html via cron job
+		// https://templ.guide/static-rendering/generating-static-html-files-with-templ
 		data, err := db.GetAllSeries()
 		if err != nil {
 			log.Println("Error getting series:", err)

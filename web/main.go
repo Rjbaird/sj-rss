@@ -22,7 +22,7 @@ func GetRecentChapters() (RecentChapter, error) {
 
 	now := time.Now()
 	year := now.Year()
-	cutoff := now.AddDate(0, 0, -14)
+	cutoff := now.AddDate(0, 0, -21)
 
 	feed := []*feeds.Item{}
 	series := []db.Series{}
