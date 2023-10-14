@@ -11,6 +11,7 @@ import (
 	"github.com/bairrya/sj-rss/jobs"
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -51,6 +52,13 @@ func main() {
 	server.Use(favicon.New(favicon.Config{
 		File: "./assets/favicon.ico",
 		URL:  "/favicon.ico",
+	}))
+	server.Use(cache.New(cache.Config{
+		Next: func(c *fiber.Ctx) bool {
+			return c.Query("refresh") == "true"
+		},
+		Expiration:   1 * time.Minute,
+		CacheControl: true,
 	}))
 
 	// set up routes
