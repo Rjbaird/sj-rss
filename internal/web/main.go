@@ -6,26 +6,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bairrya/sj-rss/db"
+	"github.com/bairrya/sj-rss/internal/models"
 	"github.com/gocolly/colly"
 	"github.com/gorilla/feeds"
 )
 
 type RecentChapter struct {
 	Feed   []*feeds.Item
-	Series []db.Series
+	Series []models.Series
 }
 
+// GetRecentChapters gets the recent chapters from the VIZ website. It returns a feed of the chapters and a slice of series data
 func GetRecentChapters() (RecentChapter, error) {
 	const baseURL = "https://www.viz.com"
 	const recentURL = baseURL + "/read/shonenjump/section/free-chapters"
-
 	now := time.Now()
 	year := now.Year()
 	cutoff := now.AddDate(0, 0, -21)
 
 	feed := []*feeds.Item{}
-	series := []db.Series{}
+	series := []models.Series{}
 
 	const seriesURL = "/shonenjump/chapters/"
 
@@ -50,7 +50,6 @@ func GetRecentChapters() (RecentChapter, error) {
 		description := fmt.Sprintf("Read %s - %s", name, chapterNumber)
 		release := e.ChildText("span.type-bs--sm")
 		date := fmt.Sprintf("%s, %d", release, year)
-		image := e.ChildAttr("img", "src")
 
 		if release != "" {
 			pubDate, err := time.Parse("January 2, 2006", date)
@@ -67,12 +66,11 @@ func GetRecentChapters() (RecentChapter, error) {
 			// filter to most recent 2 weeks
 			if pubDate.After(cutoff) {
 				feed = append(feed, manga)
-				series = append(series, db.Series{
+				series = append(series, models.Series{
 					Name:       name,
 					Handle:     handle,
 					URL:        baseURL + chapterLink,
 					LastUpdate: now.Unix(),
-					Image:      image,
 				})
 			}
 		}
@@ -86,12 +84,14 @@ func GetRecentChapters() (RecentChapter, error) {
 	}, nil
 }
 
+// GetSeriesData gets the series data from the VIZ website for a given handle. It returns a feed of the chapters
 func GetSeriesData(handle string) (*feeds.Feed, error) {
 	now := time.Now()
 
 	const baseURL = "https://www.viz.com"
 	seriesURL := baseURL + "/shonenjump/chapters/" + handle
 
+	// Create a new feed
 	feed := &feeds.Feed{
 		Title:       "Weekly Shonen Jump",
 		Link:        &feeds.Link{Href: seriesURL},
@@ -100,18 +100,23 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 		Created:     now,
 	}
 
+	// Create a new slice of feed items
 	results := []*feeds.Item{}
 
+	// Create a new colly collector
 	c := colly.NewCollector()
 
+	// Log when visiting a page with the handle
 	c.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting", handle)
+		log.Println("Visiting:", handle)
 	})
 
+	// Log any errors
 	c.OnError(func(_ *colly.Response, err error) {
 		log.Panic("Something went wrong getting recent chapters:", err)
 	})
 
+	// Get the title, description, author, and the first 3 chapters
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 		title := e.ChildText("h2.type-lg")
 		description := e.ChildText("div.line-solid.type-md")
@@ -121,7 +126,7 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 
 		author := e.ChildText("span.disp-bl--bm")
 
-		// chapters
+		// Get the first 3 chapters
 		e.ForEach("div.o_sortable", func(i int, el *colly.HTMLElement) {
 			if i > 3 {
 				return
@@ -150,9 +155,12 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 		})
 	})
 
+	// Visit the series URL
 	c.Visit(seriesURL)
 
+	// Set the feed items
 	feed.Items = results
 
+	// Return the completed feed
 	return feed, nil
 }
