@@ -104,7 +104,7 @@ func (s *server) generateIndex() error {
 	}
 
 	// Parse the template files
-	tmpl, err := template.ParseFiles("views/layout/base.html")
+	tmpl, err := template.ParseFiles("views/layouts/base.html")
 	if err != nil {
 		s.logger.Error("Error parsing index.html", err)
 		return err

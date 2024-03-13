@@ -65,13 +65,13 @@ func run() error {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
-	r := chi.NewRouter()
+	router := chi.NewRouter()
 
 	server := &server{logger: logger, config: &config{
 		port:       ":" + port,
 		staticPath: "./views/static/",
 		rssPath:    "./views/rss/",
-	}, series: &models.SeriesModel{DB: client}, jobs: jobs, router: r}
+	}, series: &models.SeriesModel{DB: client}, jobs: jobs, router: router}
 
 	// Create a new router with middleware
 	server.router.Use(server.logRequest)
@@ -85,18 +85,18 @@ func run() error {
 
 	// Handle static assets
 	staticFileServer := http.FileServer(http.Dir(server.config.staticPath))
-	server.router.Handle("/assets/*", http.StripPrefix("/assets", staticFileServer))
+	server.router.Handle("/static/*", http.StripPrefix("/static", staticFileServer))
 
 	// Handle rss files
 	rssFileServer := http.FileServer(http.Dir(server.config.rssPath))
 	server.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
-	
+
 	// Create series feeds
-	err = server.generateSeriesFeeds()
-	if err != nil {
-		logger.Error("Error generating series feeds", err)
-		return err
-	}
+	// err = server.generateSeriesFeeds()
+	// if err != nil {
+	// 	logger.Error("Error generating series feeds", err)
+	// 	return err
+	// }
 
 	// Create index.html
 	err = server.generateIndex()
