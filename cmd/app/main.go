@@ -56,14 +56,8 @@ func run() error {
 	client := redis.NewClient(options)
 	defer client.Close()
 
-	// set up cron jobs or exit
+	// set up the cron jobs scheduler
 	jobs := gocron.NewScheduler(time.UTC)
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		logger.Error("Error loading location", err)
-		return err
-	}
-	jobs.ChangeLocation(loc)
 
 	// Initialize a new server
 	port := os.Getenv("PORT")
