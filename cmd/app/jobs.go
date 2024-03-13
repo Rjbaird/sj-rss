@@ -6,13 +6,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/rjbaird/sj-rss/internal/models"
-	"github.com/rjbaird/sj-rss/internal/web"
 	"github.com/gorilla/feeds"
 	"github.com/redis/go-redis/v9"
+	"github.com/rjbaird/sj-rss/internal/models"
+	"github.com/rjbaird/sj-rss/internal/web"
 )
 
-func (s *server) updateFeeds() error {
+func (s *server) generateSeriesFeeds() error {
+	s.logger.Info("Generating series feeds...")
+
 	const baseURL = "https://www.viz.com"
 	const recentURL = baseURL + "/read/shonenjump/section/free-chapters"
 
@@ -65,16 +67,17 @@ func (s *server) updateFeeds() error {
 	for _, manga := range results.Series {
 		mangaFeed, err := web.GetSeriesData(manga.Handle)
 		if err != nil {
-			log.Println("Error updating series feed:", err)
+			s.logger.Error("Error updating series feed:", err)
 		}
 
 		mAtom, err := mangaFeed.ToAtom()
 		if err != nil {
-			log.Println("Error converting series feed to atom:", err)
+			s.logger.Error("Error converting series feed to atom:", err)
 		}
 
 		// create series feed
-		log.Println("Creating feed for", manga.Handle)
+
+		s.logger.Info("Creating feed for " + manga.Handle)
 		createXML(s.config.rssPath, manga.Handle, mAtom)
 
 		err = model.SetSeries(manga)
@@ -83,7 +86,10 @@ func (s *server) updateFeeds() error {
 			return err
 		}
 		time.Sleep(3 * time.Second)
+		msg := "Series feed created for " + manga.Handle
+		s.logger.Info(msg)
 	}
+	s.logger.Info("Series feeds generated")
 	return nil
 }
 

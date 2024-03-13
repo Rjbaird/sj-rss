@@ -90,6 +90,13 @@ func run() error {
 	// Handle rss files
 	rssFileServer := http.FileServer(http.Dir(server.config.rssPath))
 	server.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
+	
+	// Create series feeds
+	err = server.generateSeriesFeeds()
+	if err != nil {
+		logger.Error("Error generating series feeds", err)
+		return err
+	}
 
 	// Create index.html
 	err = server.generateIndex()
@@ -104,8 +111,8 @@ func run() error {
 	})
 
 	// Start the cron jobs
-	jobs.Day().At("10:00;12:00;14:00").WaitForSchedule().Do(func() {
-		server.updateFeeds()
+	jobs.Day().At("10:00;12:00;14:00").Do(func() {
+		server.generateSeriesFeeds()
 		server.generateIndex()
 	})
 	server.jobs.StartAsync()

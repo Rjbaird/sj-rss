@@ -2,13 +2,14 @@ package web
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/gocolly/colly"
 	"github.com/gorilla/feeds"
+	"github.com/rjbaird/sj-rss/internal/models"
 )
 
 type RecentChapter struct {
@@ -18,6 +19,9 @@ type RecentChapter struct {
 
 // GetRecentChapters gets the recent chapters from the VIZ website. It returns a feed of the chapters and a slice of series data
 func GetRecentChapters() (RecentChapter, error) {
+	// Create a new logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	const baseURL = "https://www.viz.com"
 	const recentURL = baseURL + "/read/shonenjump/section/free-chapters"
 	now := time.Now()
@@ -33,11 +37,12 @@ func GetRecentChapters() (RecentChapter, error) {
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting", r.URL)
+		msg := fmt.Sprintf("Visiting %s", r.URL)
+		logger.Info("Visiting: " + msg)
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
-		log.Panic("Something went wrong getting recent chapters:", err)
+		logger.Error("Error getting recent chapters", err)
 	})
 
 	c.OnHTML(".o_sortable", func(e *colly.HTMLElement) {
@@ -54,7 +59,7 @@ func GetRecentChapters() (RecentChapter, error) {
 		if release != "" {
 			pubDate, err := time.Parse("January 2, 2006", date)
 			if err != nil {
-				log.Println("Error parsing date:", err)
+				logger.Error("Error parsing date:", err)
 			}
 
 			manga := &feeds.Item{
@@ -87,6 +92,7 @@ func GetRecentChapters() (RecentChapter, error) {
 // GetSeriesData gets the series data from the VIZ website for a given handle. It returns a feed of the chapters
 func GetSeriesData(handle string) (*feeds.Feed, error) {
 	now := time.Now()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	const baseURL = "https://www.viz.com"
 	seriesURL := baseURL + "/shonenjump/chapters/" + handle
@@ -108,12 +114,13 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 
 	// Log when visiting a page with the handle
 	c.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting:", handle)
+		msg := fmt.Sprintf("Visiting %s", r.URL)
+		logger.Info(msg)
 	})
 
 	// Log any errors
 	c.OnError(func(_ *colly.Response, err error) {
-		log.Panic("Something went wrong getting recent chapters:", err)
+		logger.Error("Error getting series data", err)
 	})
 
 	// Get the title, description, author, and the first 3 chapters
@@ -139,7 +146,7 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 			if chapter_string != "" && !strings.Contains(chapter_link, "join to read") {
 				pubDate, err := time.Parse("January 2, 2006", chapter_date)
 				if err != nil {
-					log.Println("Error parsing date:", err)
+					logger.Error("Error parsing date:", err)
 				}
 
 				chapter := &feeds.Item{
