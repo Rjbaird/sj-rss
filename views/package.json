@@ -1,0 +1,27 @@
+{
+  "name": "sj-rss",
+  "version": "1.0.0",
+  "description": "A simple RSS feed generator for Shonen Jump series",
+  "author": "Ryan Baird",
+  "private": true,
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"vite build --watch\" \"tailwindcss -i ./css/tailwind.css -o ./static/styles.css --watch\"",
+    "build": "vite build --minify && tailwindcss -i ./css/tailwind.css -o ./static/styles.css --minify"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.35",
+    "prettier": "^3.2.5",
+    "prettier-plugin-go-template": "^0.0.15",
+    "prettier-plugin-tailwindcss": "^0.5.12",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.1.6"
+  },
+  "dependencies": {
+    "alpinejs": "^3.13.7",
+    "htmx.org": "^1.9.10"
+  }
+}
