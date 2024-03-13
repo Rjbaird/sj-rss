@@ -7,12 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/bairrya/sj-rss/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
+	"github.com/rjbaird/sj-rss/internal/models"
 )
 
 type config struct {
@@ -26,6 +26,7 @@ type server struct {
 	logger *slog.Logger
 	series *models.SeriesModel
 	jobs   *gocron.Scheduler
+	router *chi.Mux
 }
 
 func main() {
@@ -70,31 +71,31 @@ func run() error {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
+	r := chi.NewRouter()
 
 	server := &server{logger: logger, config: &config{
 		port:       ":" + port,
 		staticPath: "./views/static/",
 		rssPath:    "./views/rss/",
-	}, series: &models.SeriesModel{DB: client}, jobs: jobs}
+	}, series: &models.SeriesModel{DB: client}, jobs: jobs, router: r}
 
 	// Create a new router with middleware
-	r := chi.NewRouter()
-	r.Use(server.logRequest)
-	r.Use(middleware.Recoverer)
+	server.router.Use(server.logRequest)
+	server.router.Use(middleware.Recoverer)
 
 	// Set up the heartbeat route
-	r.Use(middleware.Heartbeat("/ping"))
+	server.router.Use(middleware.Heartbeat("/ping"))
 
 	// Handle 404 errors
-	r.NotFound(server.notFound404)
+	server.router.NotFound(server.notFound404)
 
 	// Handle static assets
 	staticFileServer := http.FileServer(http.Dir(server.config.staticPath))
-	r.Handle("/assets/*", http.StripPrefix("/assets", staticFileServer))
+	server.router.Handle("/assets/*", http.StripPrefix("/assets", staticFileServer))
 
 	// Handle rss files
 	rssFileServer := http.FileServer(http.Dir(server.config.rssPath))
-	r.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
+	server.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
 	// Create index.html
 	err = server.generateIndex()
@@ -104,7 +105,7 @@ func run() error {
 	}
 
 	// Define application routes
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	server.router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "views/index.html")
 	})
 
@@ -117,6 +118,6 @@ func run() error {
 
 	// Start the server
 	logger.Info("Starting server on " + server.config.port)
-	err = http.ListenAndServe(server.config.port, r)
+	err = http.ListenAndServe(server.config.port, server.router)
 	return err
 }

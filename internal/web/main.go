@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bairrya/sj-rss/internal/models"
+	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/gocolly/colly"
 	"github.com/gorilla/feeds"
 )

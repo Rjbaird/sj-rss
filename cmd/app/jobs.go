@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/bairrya/sj-rss/internal/models"
-	"github.com/bairrya/sj-rss/internal/web"
+	"github.com/rjbaird/sj-rss/internal/models"
+	"github.com/rjbaird/sj-rss/internal/web"
 	"github.com/gorilla/feeds"
 	"github.com/redis/go-redis/v9"
 )

@@ -1,4 +1,4 @@
-module github.com/bairrya/sj-rss
+module github.com/rjbaird/sj-rss
 
 go 1.21
 
