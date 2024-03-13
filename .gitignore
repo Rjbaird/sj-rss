@@ -17,6 +17,8 @@ node_modules/
 # Frontend build files
 dist/
 build/
+views/static/*.js
+views/static/*.css
 
 # Backend build files
 bin/
