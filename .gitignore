@@ -18,6 +18,9 @@ node_modules/
 dist/
 build/
 
+# Backend build files
+bin/
+
 # Go workspace file
 go.work
 
