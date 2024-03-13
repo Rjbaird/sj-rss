@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"strconv"
 	"time"
 
@@ -22,10 +24,14 @@ type SeriesModel struct {
 
 func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 	ctx := context.Background()
-
+	// Create a new logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		// AddSource: true,
+	}))
 	// Get the last 100 keys that match the pattern "series:*"
 	keys, _, err := s.DB.Scan(ctx, 0, "series:*", 100).Result()
 	if err != nil {
+		logger.Error("Error getting series keys", err)
 		return nil, err
 	}
 
@@ -37,6 +43,7 @@ func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 	for _, key := range keys {
 		data, err := s.DB.HGetAll(ctx, key).Result()
 		if err != nil {
+			logger.Error("Error getting series data", err)
 			return nil, err
 		}
 
@@ -44,6 +51,7 @@ func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 		s, err := strconv.ParseInt(data["last_update"], 10, 64)
 		t := time.Unix(s, 0)
 		if err != nil {
+			logger.Error("Error converting last_update to int64", err)
 			return nil, err
 		}
 
