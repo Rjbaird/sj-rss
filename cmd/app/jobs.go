@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/feeds"
-	"github.com/redis/go-redis/v9"
-	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/rjbaird/sj-rss/internal/web"
 )
 
@@ -50,39 +48,30 @@ func (s *server) generateSeriesFeeds() error {
 		return err
 	}
 
-	// Get the redis url from the environment
-	redisURL := os.Getenv("REDIS_URL")
-	options, err := redis.ParseURL(redisURL)
-	if err != nil {
-		log.Println("Error parsing redis url", err)
-		s.logger.Error("Error parsing redis url:", err)
-		return err
-	}
-
-	// Create a new redis client connection
-	client := redis.NewClient(options)
-	defer client.Close()
-
-	model := &models.SeriesModel{DB: client}
-
 	// use handles to scrape series
 	for _, manga := range results.Series {
 		mangaFeed, err := web.GetSeriesData(manga.Handle)
 		if err != nil {
 			s.logger.Error("Error updating series feed:", err)
+			return err
 		}
 
 		mAtom, err := mangaFeed.ToAtom()
 		if err != nil {
 			s.logger.Error("Error converting series feed to atom:", err)
+			return err
 		}
 
 		// create series feed
 
 		s.logger.Info("Creating feed for " + manga.Handle)
-		createXML(s.config.rssPath, manga.Handle, mAtom)
+		err = createXML(s.config.rssPath, manga.Handle, mAtom)
+		if err != nil {
+			s.logger.Error("Error creating series feed:", err)
+			return err
+		}
 
-		err = model.SetSeries(manga)
+		err = s.series.SetSeries(manga)
 		if err != nil {
 			log.Println("Error setting series:", err)
 			return err
@@ -131,17 +120,16 @@ func (s *server) generateIndex() error {
 	return nil
 }
 
+// NOTE: Pass in *slog.Logger to log errors? Or just return them?
 func createXML(path string, name string, atom string) error {
 	file, err := os.Create(path + name + ".xml")
 	if err != nil {
-		log.Println("Error creating file:", err)
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.WriteString(atom)
 	if err != nil {
-		log.Println("Error writing to xml feed:", err)
 		return err
 	}
 	return nil
