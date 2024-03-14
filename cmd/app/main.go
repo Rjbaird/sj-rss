@@ -92,11 +92,11 @@ func run() error {
 	server.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
 	// Create series feeds
-	// err = server.generateSeriesFeeds()
-	// if err != nil {
-	// 	logger.Error("Error generating series feeds", err)
-	// 	return err
-	// }
+	err = server.generateSeriesFeeds()
+	if err != nil {
+		logger.Error("Error generating series feeds", err)
+		return err
+	}
 
 	// Create index.html
 	err = server.generateIndex()
