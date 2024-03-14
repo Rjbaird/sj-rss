@@ -31,6 +31,7 @@ func (s *server) generateSeriesFeeds() error {
 
 	results, err := web.GetRecentChapters()
 	if err != nil {
+		s.logger.Error("Error getting recent chapters:", err)
 		return err
 	}
 
@@ -38,14 +39,14 @@ func (s *server) generateSeriesFeeds() error {
 
 	atom, err := feed.ToAtom()
 	if err != nil {
-		log.Println("Error converting series feed to atom:", err)
+		s.logger.Error("Error converting feed to atom:", err)
 		return err
 	}
 
 	// create main feed
 	err = createXML(s.config.rssPath, "main", atom)
 	if err != nil {
-		log.Println("Error creating main feed:", err)
+		s.logger.Error("Error creating main feed:", err)
 		return err
 	}
 
@@ -54,6 +55,7 @@ func (s *server) generateSeriesFeeds() error {
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
 		log.Println("Error parsing redis url", err)
+		s.logger.Error("Error parsing redis url:", err)
 		return err
 	}
 
