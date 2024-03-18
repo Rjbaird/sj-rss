@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -30,10 +29,14 @@ type server struct {
 }
 
 func main() {
+	// Create a new logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	// Run the server
-	err := run()
-	// Log any errors and exit
-	log.Fatal(err)
+	if err := run(); err != nil {
+		logger.Error("Error running server", err)
+		os.Exit(1)
+	}
 }
 
 func run() error {
@@ -111,7 +114,7 @@ func run() error {
 	})
 
 	// Start the cron jobs
-	jobs.Day().At("10:00;12:00;14:00").Do(func() {
+	server.jobs.Day().At("10:00;12:00;14:00").Do(func() {
 		server.generateSeriesFeeds()
 		server.generateIndex()
 	})
