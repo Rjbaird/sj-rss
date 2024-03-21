@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/gorilla/feeds"
@@ -108,6 +109,11 @@ func (app *application) generateIndex() error {
 		return err
 	}
 	defer f.Close()
+
+	// Sort the series by name
+	sort.Slice(series, func(i, j int) bool {
+		return series[i].Name < series[j].Name
+	})
 
 	// Write the html to the file
 	err = tmpl.ExecuteTemplate(f, "base", series)
