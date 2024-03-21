@@ -8,14 +8,13 @@ require (
 	github.com/gorilla/feeds v1.1.2
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.5.1
+	github.com/robfig/cron/v3 v3.0.1
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 )
 
 require (
@@ -24,7 +23,6 @@ require (
 	github.com/antchfx/htmlquery v1.3.0 // indirect
 	github.com/antchfx/xmlquery v1.3.18 // indirect
 	github.com/antchfx/xpath v1.2.5 // indirect
-	github.com/go-co-op/gocron v1.37.0
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect

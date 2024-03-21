@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"github.com/rjbaird/sj-rss/internal/models"
+	"github.com/robfig/cron/v3"
 )
 
 type config struct {
@@ -20,12 +20,12 @@ type config struct {
 	rssPath    string
 }
 
-type server struct {
-	config *config
-	logger *slog.Logger
-	series *models.SeriesModel
-	jobs   *gocron.Scheduler
-	router *chi.Mux
+type application struct {
+	config   *config
+	logger   *slog.Logger
+	series   *models.SeriesModel
+	router   *chi.Mux
+	schedule *cron.Cron
 }
 
 func main() {
@@ -59,69 +59,69 @@ func run() error {
 	client := redis.NewClient(options)
 	defer client.Close()
 
-	// set up the cron jobs scheduler
-	jobs := gocron.NewScheduler(time.UTC)
-
 	// Initialize a new server
 	port := os.Getenv("PORT")
 	if port == "" {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
-	router := chi.NewRouter()
 
-	server := &server{logger: logger, config: &config{
+	config := &config{
 		port:       ":" + port,
 		staticPath: "./views/static/",
 		rssPath:    "./views/rss/",
-	}, series: &models.SeriesModel{DB: client}, jobs: jobs, router: router}
+	}
+
+	router := chi.NewRouter()
+
+	application := &application{logger: logger, config: config, series: &models.SeriesModel{DB: client}, router: router, schedule: cron.New(cron.WithLocation(time.UTC))}
 
 	// Create a new router with middleware
-	server.router.Use(server.logRequest)
-	server.router.Use(middleware.Recoverer)
+	application.router.Use(application.logRequest)
+	application.router.Use(middleware.Recoverer)
 
 	// Set up the heartbeat route
-	server.router.Use(middleware.Heartbeat("/ping"))
+	application.router.Use(middleware.Heartbeat("/ping"))
 
 	// Handle 404 errors
-	server.router.NotFound(server.notFound404)
+	application.router.NotFound(application.notFound404)
 
 	// Handle static assets
-	staticFileServer := http.FileServer(http.Dir(server.config.staticPath))
-	server.router.Handle("/static/*", http.StripPrefix("/static", staticFileServer))
+	staticFileServer := http.FileServer(http.Dir(application.config.staticPath))
+	application.router.Handle("/static/*", http.StripPrefix("/static", staticFileServer))
 
 	// Handle rss files
-	rssFileServer := http.FileServer(http.Dir(server.config.rssPath))
-	server.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
+	rssFileServer := http.FileServer(http.Dir(application.config.rssPath))
+	application.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
 	// Create series feeds
-	err = server.generateSeriesFeeds()
+	err = application.generateSeriesFeeds()
 	if err != nil {
 		logger.Error("Error generating series feeds", err)
 		return err
 	}
 
 	// Create index.html
-	err = server.generateIndex()
+	err = application.generateIndex()
 	if err != nil {
 		logger.Error("Error generating index.html", err)
 		return err
 	}
 
 	// Define application routes
-	server.router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	application.router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "views/index.html")
 	})
 
 	// Start the cron jobs
-	server.jobs.Day().At("10:00;12:00;14:00").Do(func() {
-		server.generateSeriesFeeds()
-		server.generateIndex()
+	application.schedule.AddFunc("0 10,12,14 * * *", func() {
+		application.generateSeriesFeeds()
+		application.generateIndex()
 	})
-	server.jobs.StartAsync()
+	application.schedule.Start()
 
 	// Start the server
-	logger.Info("Starting server on " + server.config.port)
-	err = http.ListenAndServe(server.config.port, server.router)
+	logger.Info("Starting server on " + application.config.port)
+	err = http.ListenAndServe(application.config.port, application.router)
 	return err
 }
