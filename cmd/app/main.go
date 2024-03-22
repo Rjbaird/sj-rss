@@ -72,9 +72,12 @@ func run() error {
 		rssPath:    "./views/rss/",
 	}
 
-	router := chi.NewRouter()
-
-	application := &application{logger: logger, config: config, series: &models.SeriesModel{DB: client}, router: router, schedule: cron.New(cron.WithLocation(time.UTC))}
+	application := &application{
+		logger:   logger,
+		config:   config,
+		series:   &models.SeriesModel{DB: client},
+		router:   chi.NewRouter(),
+		schedule: cron.New(cron.WithLocation(time.UTC))}
 
 	// Create a new router with middleware
 	application.router.Use(application.logRequest)
