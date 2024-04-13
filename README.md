@@ -12,15 +12,13 @@ Feeds are updated daily between 10am and 2pm, Central Time, UTC.
 
 **Database:** [Redis](https://redis.io/)
 
-
 ## Prerequisites
 
 Before installing sj-rss you'll need:
 
-- Go v1.2.0 or later
-- Node.js v20.0.0 or later
+- Go v1.20 or later
+- Node.js v20 or later
 - Make - optional, but recommended
-
 
 ## Environment Variables
 
@@ -41,6 +39,7 @@ If you have Make installed:
     touch .env
     make install
 ```
+
 Finally, run the development server:
 
 ```bash
@@ -57,10 +56,22 @@ Otherwise install manually with the following commands:
     ./sj-rss
 ```
 
+Next, run the development server:
+
+```bash
+    go run ./cmd/app
+```
+
+Finally, run vite in a separate terminal window with the following command in the views directory:
+
+```bash
+    cd views
+    npm run dev
+```
+
 ## Issues
 
 If you notice any problems with either this repository, the main site or individual feeds, please open an [issue](https://github.com/Rjbaird/sj-rss/issues) or a [pull request](https://github.com/Rjbaird/sj-rss/pulls).
-
 
 ## Upcoming Features
 
