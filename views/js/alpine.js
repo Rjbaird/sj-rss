@@ -1,4 +1,7 @@
+import Clipboard from "@ryangjchandler/alpine-clipboard";
 import Alpine from "alpinejs";
-window.Alpine = Alpine;
 
-Alpine.start();
+Alpine.plugin(Clipboard);
+
+window.Alpine = Alpine;
+window.Alpine.start();
