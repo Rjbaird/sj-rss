@@ -40,14 +40,13 @@ func main() {
 }
 
 func run() error {
+	// Create a new logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
+
+	// Load the environment variables
 	godotenv.Load(".env")
 
-	// Create a new logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		// AddSource: true,
-	}))
-
-	// Get the redis url from the environment
+	// Get the redis url from the environment variables
 	redisURL := os.Getenv("REDIS_URL")
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
@@ -59,19 +58,21 @@ func run() error {
 	client := redis.NewClient(options)
 	defer client.Close()
 
-	// Initialize a new server
+	// Get the port from the environment variables
 	port := os.Getenv("PORT")
 	if port == "" {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
-
+	
+	// Create a new config
 	config := &config{
 		port:       ":" + port,
 		staticPath: "./views/static/",
 		rssPath:    "./views/rss/",
 	}
-
+	
+	// Initialize a new server
 	application := &application{
 		logger:   logger,
 		config:   config,
@@ -93,7 +94,7 @@ func run() error {
 	staticFileServer := http.FileServer(http.Dir(application.config.staticPath))
 	application.router.Handle("/static/*", http.StripPrefix("/static", staticFileServer))
 
-	// Handle rss files
+	// Handle static rss files
 	rssFileServer := http.FileServer(http.Dir(application.config.rssPath))
 	application.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
@@ -117,7 +118,7 @@ func run() error {
 	})
 
 	// Start the cron jobs
-	application.schedule.AddFunc("0 10,12,14 * * *", func() {
+	application.schedule.AddFunc("*/20 10-14 * * *", func() {
 		application.generateSeriesFeeds()
 		application.generateIndex()
 	})

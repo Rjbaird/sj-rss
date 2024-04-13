@@ -48,3 +48,16 @@ run/app:
 dev:
 	@echo "Running dev"
 	@make -j 2 run/views run/app
+
+
+# ==========================================
+## INSTALLATION
+# ==========================================
+
+## install: Install all dependencies
+.PHONY: install
+install:
+	@echo "Installing dependencies"
+	go mod download
+	go mod tidy
+	cd views && npm install
