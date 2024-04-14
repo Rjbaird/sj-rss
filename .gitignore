@@ -41,3 +41,7 @@ tmp
 
 # XML files
 *.xml
+
+# Database files
+*.sqlite3
+*.db
