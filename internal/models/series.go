@@ -1,104 +1,57 @@
 package models
 
 import (
-	"context"
-	"fmt"
-	"log/slog"
-	"os"
-	"strconv"
-	"time"
-
-	"github.com/redis/go-redis/v9"
+	"database/sql"
 )
 
 type Series struct {
-	Name       string `json:"name" redis:"name"`
-	Handle     string `json:"handle" redis:"handle"`
-	URL        string `json:"url" redis:"url"`
-	LastUpdate int64  `json:"last_update" redis:"last_update"`
+	Name       string `json:"name"`
+	Handle     string `json:"handle"`
+	URL        string `json:"url"`
+	LastUpdate int64  `json:"last_update"`
+}
+
+type SeriesRow struct {
+	ID int
+	Series
 }
 
 type SeriesModel struct {
-	DB *redis.Client
+	DB *sql.DB
 }
 
-func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
-	ctx := context.Background()
-	// Create a new logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		// AddSource: true,
-	}))
-	// Get the last 100 keys that match the pattern "series:*"
-	keys, _, err := s.DB.Scan(ctx, 0, "series:*", 100).Result()
+func (s *SeriesModel) SelectAllSeries() ([]*SeriesRow, error) {
+	rows, err := s.DB.Query("SELECT * FROM series")
 	if err != nil {
-		logger.Error("Error getting series keys", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	// Create a slice of Series to hold the data
-	var series []*Series
+	var seriesRow []*SeriesRow
 
-	// TODO: Turn into a transaction to reduce round trips
-	// Loop through the keys and get the data for each series
-	for _, key := range keys {
-		data, err := s.DB.HGetAll(ctx, key).Result()
+	// Iterate over the rows
+	for rows.Next() {
+		// Create a new Series
+		var s SeriesRow
+
+		// Scan the rows into the Series
+		err := rows.Scan(&s.ID, &s.Name, &s.Handle, &s.URL, &s.LastUpdate)
 		if err != nil {
-			logger.Error("Error getting series data", err)
 			return nil, err
 		}
 
-		// Convert the last_update field to an int64
-		s, err := strconv.ParseInt(data["last_update"], 10, 64)
-		t := time.Unix(s, 0)
-		if err != nil {
-			logger.Error("Error converting last_update to int64", err)
-			return nil, err
-		}
-
-		series = append(series, &Series{
-			Name:       data["name"],
-			Handle:     data["handle"],
-			URL:        data["url"],
-			LastUpdate: t.Unix(),
-		})
+		seriesRow = append(seriesRow, &s)
 	}
 
-	// Return the slice of Series
-	return series, nil
+	return seriesRow, nil
 }
 
-func (s *SeriesModel) SetSeries(series Series) error {
-	ctx := context.Background()
-
-	key := fmt.Sprintf("series:%s", series.Handle)
-	_, err := s.DB.HSet(ctx, key, "name", series.Name, "url", series.URL, "last_update", series.LastUpdate, "handle", series.Handle).Result()
+func (s *SeriesModel) UpsertSeries(series Series) error {
+	// Create a statement to upcert the series
+	_, err := s.DB.Exec("INSERT INTO series (name, handle, url, last_update) VALUES (?, ?, ?, ?) ON CONFLICT (handle) DO UPDATE SET name = ?, url = ?, last_update = ?", series.Name, series.Handle, series.URL, series.LastUpdate, series.Name, series.URL, series.LastUpdate)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (s *SeriesModel) GetSeries(handle string) (*Series, error) {
-	ctx := context.Background()
-
-	key := fmt.Sprintf("series:%s", handle)
-	data, err := s.DB.HGetAll(ctx, key).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	str, err := strconv.ParseInt(data["last_update"], 10, 64)
-	t := time.Unix(str, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	series := &Series{
-		Name:       data["name"],
-		Handle:     data["handle"],
-		URL:        data["url"],
-		LastUpdate: t.Unix(),
-	}
-
-	return series, nil
 }

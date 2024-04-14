@@ -64,7 +64,6 @@ func (app *application) generateSeriesFeeds() error {
 		}
 
 		// create series feed
-
 		app.logger.Info("Creating feed for " + manga.Handle)
 		err = createXML(app.config.rssPath, manga.Handle, mAtom)
 		if err != nil {
@@ -72,7 +71,7 @@ func (app *application) generateSeriesFeeds() error {
 			return err
 		}
 
-		err = app.series.SetSeries(manga)
+		err = app.series.UpsertSeries(manga)
 		if err != nil {
 			log.Println("Error setting series:", err)
 			return err
@@ -89,7 +88,7 @@ func (app *application) generateIndex() error {
 	app.logger.Info("Generating index.html...")
 
 	// Get all the series from the database
-	series, err := app.series.GetAllSeries()
+	series, err := app.series.SelectAllSeries()
 	if err != nil {
 		app.logger.Error("Error getting all series", err)
 		return err

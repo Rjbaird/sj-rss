@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/robfig/cron/v3"
 )
@@ -43,22 +43,17 @@ func main() {
 
 func run() error {
 	// Create a new logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	// Load the environment variables
 	godotenv.Load(".env")
 
-	// Get the redis url from the environment variables
-	redisURL := os.Getenv("REDIS_URL")
-	options, err := redis.ParseURL(redisURL)
-	if err != nil {
-		logger.Error("Error parsing redis url", err)
-		return err
-	}
+	// Open the database
+	db, _ := sql.Open("sqlite3", "./database/sj-rss.db")
+	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS series (id INTEGER PRIMARY KEY, name TEXT, handle TEXT NOT NULL UNIQUE, url TEXT, last_update INTEGER)")
+	statement.Exec()
 
-	// Create a new redis client connection
-	client := redis.NewClient(options)
-	defer client.Close()
+	defer db.Close()
 
 	// Get the port from the environment variables
 	port := os.Getenv("PORT")
@@ -66,7 +61,7 @@ func run() error {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
-
+  
 	// Create a new config
 	config := &config{
 		port:       ":" + port,
@@ -86,7 +81,7 @@ func run() error {
 	application := &application{
 		logger:   logger,
 		config:   config,
-		series:   &models.SeriesModel{DB: client},
+		series:   &models.SeriesModel{DB: db},
 		router:   chi.NewRouter(),
 		schedule: cron.New(cron.WithLocation(chicago))}
 
@@ -109,7 +104,7 @@ func run() error {
 	application.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
 	// Create series feeds
-	err = application.generateSeriesFeeds()
+	err := application.generateSeriesFeeds()
 	if err != nil {
 		logger.Error("Error generating series feeds", err)
 		return err

@@ -10,7 +10,7 @@ Feeds are updated daily between 10am and 2pm, Central Time, UTC.
 
 **Server:** [Go](https://go.dev/), [Railway](https://railway.app/)
 
-**Database:** [Redis](https://redis.io/)
+**Database:** [SQLite](https://www.sqlite.org/index.html)
 
 ## Prerequisites
 
@@ -18,13 +18,12 @@ Before installing sj-rss you'll need:
 
 - Go v1.20 or later
 - Node.js v20 or later
+- SQLite v3 or later
 - Make - optional, but recommended
 
 ## Environment Variables
 
-To run this project, you will need to add the following environment variables to your .env file
-
-`REDIS_URL`- required, the URL for your Redis instance
+When running this project, you can add the following environment variables to your .env file
 
 `PORT` - optional, default is 3000
 
@@ -75,6 +74,5 @@ If you notice any problems with either this repository, the main site or individ
 
 ## Upcoming Features
 
-- Replace Redis with SQLite
 - Update UI design
 - Add "copy to clipboard" for feed links
