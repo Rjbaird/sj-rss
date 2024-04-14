@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -60,19 +61,29 @@ func run() error {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
+  
 	// Create a new config
 	config := &config{
 		port:       ":" + port,
 		staticPath: "./views/static/",
 		rssPath:    "./views/rss/",
 	}
+
+	// Load the time zone location for America/Chicago
+	chicago, err := time.LoadLocation("America/Chicago")
+
+	if err != nil {
+		fmt.Println("Error loading location:", err)
+		return err
+	}
+
 	// Initialize a new server
 	application := &application{
 		logger:   logger,
 		config:   config,
 		series:   &models.SeriesModel{DB: db},
 		router:   chi.NewRouter(),
-		schedule: cron.New(cron.WithLocation(time.UTC))}
+		schedule: cron.New(cron.WithLocation(chicago))}
 
 	// Create a new router with middleware
 	application.router.Use(application.logRequest)
