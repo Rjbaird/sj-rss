@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -61,7 +62,7 @@ func run() error {
 		logger.Info("PORT not set, defaulting to 3000")
 		port = "3000"
 	}
-  
+
 	// Create a new config
 	config := &config{
 		port:       ":" + port,
@@ -104,7 +105,7 @@ func run() error {
 	application.router.Handle("/rss/*", http.StripPrefix("/rss", rssFileServer))
 
 	// Create series feeds
-	err := application.generateSeriesFeeds()
+	err = application.generateSeriesFeeds()
 	if err != nil {
 		logger.Error("Error generating series feeds", err)
 		return err
