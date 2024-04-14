@@ -6,15 +6,16 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 	_ "time/tzdata"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/robfig/cron/v3"
+	"github.com/tursodatabase/go-libsql"
 )
 
 type config struct {
@@ -48,9 +49,29 @@ func run() error {
 
 	// Load the environment variables
 	godotenv.Load(".env")
+	dbName := "sj-rss.db"
+	url := os.Getenv("DATABASE_URL")
+	auth := os.Getenv("AUTH_TOKEN")
+
+	dir, err := os.MkdirTemp("", "local-*")
+	if err != nil {
+		logger.Error("Error creating temp directory", err)
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	dbPath := filepath.Join(dir, dbName)
+	connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, url,
+		libsql.WithAuthToken(auth),
+	)
+	if err != nil {
+		logger.Error("Error creating connector", err)
+		return err
+	}
+	defer connector.Close()
 
 	// Open the database
-	db, _ := sql.Open("sqlite3", "./database/sj-rss.db")
+	db := sql.OpenDB(connector)
 	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS series (id INTEGER PRIMARY KEY, name TEXT, handle TEXT NOT NULL UNIQUE, url TEXT, last_update INTEGER)")
 	statement.Exec()
 
