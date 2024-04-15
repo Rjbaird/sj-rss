@@ -74,7 +74,7 @@ func GetRecentChapters() (RecentChapter, error) {
 				series = append(series, models.Series{
 					Name:       name,
 					Handle:     handle,
-					URL:        baseURL + chapterLink,
+					RecentURL:  baseURL + chapterLink,
 					LastUpdate: now.Unix(),
 				})
 			}

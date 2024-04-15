@@ -8,10 +8,14 @@ import (
 )
 
 type Series struct {
-	Name       string `json:"name" redis:"name"`
-	Handle     string `json:"handle" redis:"handle"`
-	URL        string `json:"url" redis:"url"`
-	LastUpdate int64  `json:"last_update" redis:"last_update"`
+	Name        string `json:"name"`
+	Handle      string `json:"handle"`
+	Description string `json:"description"`
+	CreatedBy   string `json:"created_by"`
+	Icon        string `json:"icon"`
+	Hero        string `json:"hero"`
+	RecentURL   string `json:"recent_url"`
+	LastUpdate  int64  `json:"last_update"`
 }
 
 type SeriesModel struct {
