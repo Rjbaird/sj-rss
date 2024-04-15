@@ -1,14 +1,10 @@
 package models
 
 import (
-	"context"
-	"fmt"
+	"encoding/json"
 	"log/slog"
 	"os"
-	"strconv"
-	"time"
-
-	"github.com/redis/go-redis/v9"
+	"path/filepath"
 )
 
 type Series struct {
@@ -19,48 +15,49 @@ type Series struct {
 }
 
 type SeriesModel struct {
-	DB *redis.Client
+	Logger *slog.Logger
 }
 
 func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
-	ctx := context.Background()
-	// Create a new logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		// AddSource: true,
-	}))
-	// Get the last 100 keys that match the pattern "series:*"
-	keys, _, err := s.DB.Scan(ctx, 0, "series:*", 100).Result()
-	if err != nil {
-		logger.Error("Error getting series keys", err)
-		return nil, err
-	}
-
+	s.Logger.Info("Getting all series")
 	// Create a slice of Series to hold the data
 	var series []*Series
 
-	// TODO: Turn into a transaction to reduce round trips
-	// Loop through the keys and get the data for each series
-	for _, key := range keys {
-		data, err := s.DB.HGetAll(ctx, key).Result()
+	// Get all the json files from the data folder
+	files, err := os.ReadDir("./data")
+	if err != nil {
+		s.Logger.Error("Error reading data folder", err)
+		return nil, err
+	}
+
+	// Loop through the files
+	for _, file := range files {
+		// Skip any files that are not json
+		if file.IsDir() || filepath.Ext(file.Name()) != ".json" {
+			continue
+		}
+
+		// Open the file
+		f, err := os.Open("./data/" + file.Name())
 		if err != nil {
-			logger.Error("Error getting series data", err)
+			s.Logger.Error("Error opening file", err)
+			return nil, err
+		}
+		defer f.Close()
+
+		// Create a new Series to hold the data
+		var ser Series
+
+		// Decode the json file into the Series struct
+		err = json.NewDecoder(f).Decode(&ser)
+		if err != nil {
+			s.Logger.Error("Error decoding json", err)
 			return nil, err
 		}
 
-		// Convert the last_update field to an int64
-		s, err := strconv.ParseInt(data["last_update"], 10, 64)
-		t := time.Unix(s, 0)
-		if err != nil {
-			logger.Error("Error converting last_update to int64", err)
-			return nil, err
-		}
+		// Append the Series to the slice
+		series = append(series, &ser)
 
-		series = append(series, &Series{
-			Name:       data["name"],
-			Handle:     data["handle"],
-			URL:        data["url"],
-			LastUpdate: t.Unix(),
-		})
 	}
 
 	// Return the slice of Series
@@ -68,37 +65,40 @@ func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 }
 
 func (s *SeriesModel) SetSeries(series Series) error {
-	ctx := context.Background()
+	s.Logger.Info("Setting series:" + series.Handle)
 
-	key := fmt.Sprintf("series:%s", series.Handle)
-	_, err := s.DB.HSet(ctx, key, "name", series.Name, "url", series.URL, "last_update", series.LastUpdate, "handle", series.Handle).Result()
+	data, err := json.Marshal(series)
 	if err != nil {
+		s.Logger.Error("Error marshalling series", err)
 		return err
 	}
+	err = os.WriteFile("./data/"+series.Handle+".json", data, 0644)
+	if err != nil {
+		s.Logger.Error("Error writing series file", err)
+		return err
+	}
+
 	return nil
 }
 
 func (s *SeriesModel) GetSeries(handle string) (*Series, error) {
-	ctx := context.Background()
+	s.Logger.Info("Getting series")
 
-	key := fmt.Sprintf("series:%s", handle)
-	data, err := s.DB.HGetAll(ctx, key).Result()
+	// Open the file
+	f, err := os.Open(handle + ".json")
 	if err != nil {
+		s.Logger.Error("Error opening file", err)
+		return nil, err
+	}
+	defer f.Close()
+
+	// Convert the file to a Series struct
+	var series Series
+	err = json.NewDecoder(f).Decode(&series)
+	if err != nil {
+		s.Logger.Error("Error decoding json", err)
 		return nil, err
 	}
 
-	str, err := strconv.ParseInt(data["last_update"], 10, 64)
-	t := time.Unix(str, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	series := &Series{
-		Name:       data["name"],
-		Handle:     data["handle"],
-		URL:        data["url"],
-		LastUpdate: t.Unix(),
-	}
-
-	return series, nil
+	return &series, nil
 }

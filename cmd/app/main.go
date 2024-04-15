@@ -11,7 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"github.com/rjbaird/sj-rss/internal/models"
 	"github.com/robfig/cron/v3"
 )
@@ -48,18 +47,6 @@ func run() error {
 	// Load the environment variables
 	godotenv.Load(".env")
 
-	// Get the redis url from the environment variables
-	redisURL := os.Getenv("REDIS_URL")
-	options, err := redis.ParseURL(redisURL)
-	if err != nil {
-		logger.Error("Error parsing redis url", err)
-		return err
-	}
-
-	// Create a new redis client connection
-	client := redis.NewClient(options)
-	defer client.Close()
-
 	// Get the port from the environment variables
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -76,7 +63,6 @@ func run() error {
 
 	// Load the time zone location for America/Chicago
 	chicago, err := time.LoadLocation("America/Chicago")
-
 	if err != nil {
 		fmt.Println("Error loading location:", err)
 		return err
@@ -86,7 +72,7 @@ func run() error {
 	application := &application{
 		logger:   logger,
 		config:   config,
-		series:   &models.SeriesModel{DB: client},
+		series:   &models.SeriesModel{Logger: logger},
 		router:   chi.NewRouter(),
 		schedule: cron.New(cron.WithLocation(chicago))}
 
