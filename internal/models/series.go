@@ -15,6 +15,8 @@ type Series struct {
 	Icon        string `json:"icon"`
 	Hero        string `json:"hero"`
 	RecentURL   string `json:"recent_url"`
+	WebOnly     bool   `json:"web_only"`
+	OneShot     bool   `json:"one_shot"`
 	LastUpdate  int64  `json:"last_update"`
 }
 
