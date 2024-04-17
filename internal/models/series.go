@@ -7,25 +7,39 @@ import (
 	"path/filepath"
 )
 
+type Meta struct {
+	Name       string `json:"name"`
+	Handle     string `json:"handle"`
+	Icon       string `json:"icon"`
+	LastUpdate int64  `json:"last_update"`
+	RecentURL  string `json:"recent_url"`
+}
+
 type Series struct {
-	Name        string `json:"name"`
-	Handle      string `json:"handle"`
-	Description string `json:"description"`
-	CreatedBy   string `json:"created_by"`
-	Icon        string `json:"icon"`
-	Hero        string `json:"hero"`
-	RecentURL   string `json:"recent_url"`
-	WebOnly     bool   `json:"web_only"`
-	OneShot     bool   `json:"one_shot"`
-	LastUpdate  int64  `json:"last_update"`
+	Meta
+	Description string   `json:"description"`
+	CreatedBy   string   `json:"created_by"`
+	Hero        string   `json:"hero"`
+	WebOnly     bool     `json:"web_only"`
+	OneShot     bool     `json:"one_shot"`
+	Volumes     []Volume `json:"volumes"`
+}
+
+type Volume struct {
+	Number   int       `json:"number"`
+	URL      string    `json:"url"`
+	Image    string    `json:"image"`
+	Chapters []float64 `json:"chapters"`
 }
 
 type SeriesModel struct {
 	Logger *slog.Logger
 }
 
+// GetAllSeries reads all the series json files from the data folder and returns a slice of Series
 func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 	s.Logger.Info("Getting all series")
+
 	// Create a slice of Series to hold the data
 	var series []*Series
 
@@ -70,6 +84,7 @@ func (s *SeriesModel) GetAllSeries() ([]*Series, error) {
 	return series, nil
 }
 
+// SetSeries writes a Series struct to a json file in the data folder
 func (s *SeriesModel) SetSeries(series Series) error {
 	s.Logger.Info("Setting series:" + series.Handle)
 
@@ -87,6 +102,7 @@ func (s *SeriesModel) SetSeries(series Series) error {
 	return nil
 }
 
+// GetSeries reads a json file from the data folder and returns a Series struct
 func (s *SeriesModel) GetSeries(handle string) (*Series, error) {
 	s.Logger.Info("Getting series")
 

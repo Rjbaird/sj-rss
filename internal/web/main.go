@@ -26,7 +26,7 @@ func GetRecentChapters() (RecentChapter, error) {
 	const recentURL = baseURL + "/read/shonenjump/section/free-chapters"
 	now := time.Now()
 	year := now.Year()
-	cutoff := now.AddDate(0, 0, -21)
+	cutoff := now.AddDate(0, 0, -28)
 
 	feed := []*feeds.Item{}
 	series := []models.Series{}
@@ -37,8 +37,7 @@ func GetRecentChapters() (RecentChapter, error) {
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
-		msg := fmt.Sprintf("Visiting %s", r.URL)
-		logger.Info("Visiting: " + msg)
+		logger.Info("Visiting: " + r.URL.String())
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
@@ -71,11 +70,14 @@ func GetRecentChapters() (RecentChapter, error) {
 			// filter to most recent 2 weeks
 			if pubDate.After(cutoff) {
 				feed = append(feed, manga)
-				series = append(series, models.Series{
+				meta := models.Meta{
 					Name:       name,
 					Handle:     handle,
-					RecentURL:  baseURL + chapterLink,
 					LastUpdate: now.Unix(),
+					RecentURL:  baseURL + chapterLink,
+				}
+				series = append(series, models.Series{
+					Meta: meta,
 				})
 			}
 		}
@@ -114,8 +116,7 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 
 	// Log when visiting a page with the handle
 	c.OnRequest(func(r *colly.Request) {
-		msg := fmt.Sprintf("Visiting %s", r.URL)
-		logger.Info(msg)
+		logger.Info("Visiting: " + r.URL.String())
 	})
 
 	// Log any errors
@@ -127,6 +128,7 @@ func GetSeriesData(handle string) (*feeds.Feed, error) {
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 		title := e.ChildText("h2.type-lg")
 		description := e.ChildText("div.line-solid.type-md")
+		// hero := e.ChildAttr("img.o_hero-media", "src")
 
 		feed.Title = title
 		feed.Description = description
